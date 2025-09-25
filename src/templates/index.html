@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Foreclosure Skip Trace{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-speedometer2"></i> Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total Cases</h5>
+                <h2 class="card-text">{{ stats.total_cases }}</h2>
+                <a href="{{ url_for('cases') }}" class="btn btn-light btn-sm">View All</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Defendants</h5>
+                <h2 class="card-text">{{ stats.total_defendants }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Phone Numbers</h5>
+                <h2 class="card-text">{{ stats.total_skiptraces }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title">Towns</h5>
+                <h2 class="card-text">{{ stats.towns|length }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Towns List -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-geo-alt"></i> Towns in Database
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for town in stats.towns %}
+                    <a href="{{ url_for('cases', town=town) }}" class="list-group-item list-group-item-action">
+                        <i class="bi bi-building"></i> {{ town }}
+                    </a>
+                    {% endfor %}
+                    {% if not stats.towns %}
+                    <div class="list-group-item text-muted">
+                        No towns found. <a href="{{ url_for('scrape') }}">Start scraping</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Cases -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-clock-history"></i> Recent Cases
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for case in recent_cases %}
+                    <a href="{{ url_for('case_detail', docket_number=case.docket_number) }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ case.case_name|truncate(50) }}</h6>
+                            <small>{{ case.town }}</small>
+                        </div>
+                        <p class="mb-1">
+                            <span class="badge bg-secondary">{{ case.docket_number }}</span>
+                        </p>
+                    </a>
+                    {% endfor %}
+                    {% if not recent_cases %}
+                    <div class="list-group-item text-muted">
+                        No cases found. <a href="{{ url_for('scrape') }}">Start scraping</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-lightning"></i> Quick Actions
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('scrape') }}" class="btn btn-primary">
+                    <i class="bi bi-cloud-download"></i> Scrape New Cases
+                </a>
+                <a href="{{ url_for('cases') }}" class="btn btn-success">
+                    <i class="bi bi-folder-open"></i> View All Cases
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Cases - Foreclosure Skip Trace{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-folder"></i> Cases</h1>
+    </div>
+</div>
+
+<!-- Filter by Town -->
+<div class="row mb-3">
+    <div class="col-md-6">
+        <form method="get" action="{{ url_for('cases') }}">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-funnel"></i></span>
+                <input type="text" class="form-control" name="town" placeholder="Filter by town" value="{{ selected_town }}">
+                <button class="btn btn-primary" type="submit">Filter</button>
+                {% if selected_town %}
+                <a href="{{ url_for('cases') }}" class="btn btn-secondary">Clear</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+    <div class="col-md-6 text-end">
+        <span class="badge bg-info">Total: {{ cases|length }} cases</span>
+    </div>
+</div>
+
+<!-- Cases Table -->
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Docket Number</th>
+                <th>Case Name</th>
+                <th>Town</th>
+                <th>Defendants</th>
+                <th>Phone Numbers</th>
+                <th>Skip Traced</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for case in cases %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('case_detail', docket_number=case.docket_number) }}">
+                        <code>{{ case.docket_number }}</code>
+                    </a>
+                </td>
+                <td>{{ case.case_name|truncate(50) }}</td>
+                <td>{{ case.town or 'N/A' }}</td>
+                <td>
+                    <span class="badge bg-secondary">{{ case.defendant_count }}</span>
+                </td>
+                <td>
+                    <span class="badge bg-info">{{ case.phone_count }}</span>
+                </td>
+                <td>
+                    {% if case.has_skiptrace %}
+                        <span class="badge bg-success">Yes</span>
+                    {% else %}
+                        <span class="badge bg-warning">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('case_detail', docket_number=case.docket_number) }}"
+                       class="btn btn-sm btn-primary">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    {% if not case.has_skiptrace %}
+                    <button class="btn btn-sm btn-success skip-trace-btn"
+                            data-docket="{{ case.docket_number }}">
+                        <i class="bi bi-telephone"></i> Skip Trace
+                    </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if not cases %}
+    <div class="alert alert-info text-center">
+        No cases found. <a href="{{ url_for('scrape') }}">Start scraping some cases</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Skip Trace Modal -->
+<div class="modal fade" id="skipTraceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Run Skip Trace</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Run skip trace for case: <strong id="modalDocket"></strong></p>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="useProduction">
+                    <label class="form-check-label" for="useProduction">
+                        Use Production API (charges apply)
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="forceSkipTrace">
+                    <label class="form-check-label" for="forceSkipTrace">
+                        Force re-process (if already traced)
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSkipTrace">
+                    <i class="bi bi-telephone"></i> Run Skip Trace
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let currentDocket = '';
+
+    $('.skip-trace-btn').click(function() {
+        currentDocket = $(this).data('docket');
+        $('#modalDocket').text(currentDocket);
+        $('#skipTraceModal').modal('show');
+    });
+
+    $('#confirmSkipTrace').click(function() {
+        const useProduction = $('#useProduction').is(':checked');
+        const force = $('#forceSkipTrace').is(':checked');
+
+        // Disable button and show loading
+        $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Processing...');
+
+        $.post(`/skip-trace/${currentDocket}`, {
+            production: useProduction,
+            force: force
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert(`Success! Found ${response.stats.phone_numbers_found} phone numbers.`);
+                location.reload();
+            } else {
+                alert(`Error: ${response.message}`);
+            }
+        })
+        .fail(function(xhr) {
+            alert('Error running skip trace: ' + xhr.responseText);
+        })
+        .always(function() {
+            $('#skipTraceModal').modal('hide');
+            $('#confirmSkipTrace').prop('disabled', false).html('<i class="bi bi-telephone"></i> Run Skip Trace');
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+selenium
+beautifulsoup4
+requests
+webdriver-manager
+
+# Database Dependencies
+supabase
+python-dotenv
+
+# Web Application Dependencies
+flask
+flask-cors
+gunicorn
+
+# FastAPI Dependencies
+fastapi
+uvicorn[standard]
+pydantic>=2.0
+python-multipart
+httpx

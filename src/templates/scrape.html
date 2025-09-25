@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Scrape Cases - Foreclosure Skip Trace{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-cloud-download"></i> Scrape Cases</h1>
+        <p class="lead">Scrape foreclosure cases from Connecticut Judiciary website</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-search"></i> Select Town to Scrape
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('scrape') }}">
+                    <div class="mb-3">
+                        <label for="town" class="form-label">Town Name</label>
+                        <input type="text" class="form-control" id="town" name="town"
+                               placeholder="Enter town name (e.g., Middletown)" required>
+                        <div class="form-text">
+                            Enter the Connecticut town name to scrape foreclosure cases from.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6>Popular Towns:</h6>
+                        <div class="btn-group flex-wrap" role="group">
+                            <button type="button" class="btn btn-outline-secondary town-btn">Middletown</button>
+                            <button type="button" class="btn btn-outline-secondary town-btn">Hartford</button>
+                            <button type="button" class="btn btn-outline-secondary town-btn">New Haven</button>
+                            <button type="button" class="btn btn-outline-secondary town-btn">Stamford</button>
+                            <button type="button" class="btn btn-outline-secondary town-btn">Bridgeport</button>
+                            <button type="button" class="btn btn-outline-secondary town-btn">Waterbury</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="scrapeBtn">
+                        <i class="bi bi-cloud-download"></i> Start Scraping
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-info-circle"></i> Information
+            </div>
+            <div class="card-body">
+                <h5>How it works:</h5>
+                <ol>
+                    <li>Enter a Connecticut town name</li>
+                    <li>The scraper will visit the CT Judiciary website</li>
+                    <li>It will search for foreclosure cases in that town</li>
+                    <li>Cases and defendant information will be stored in the database</li>
+                    <li>Duplicate cases are automatically skipped</li>
+                </ol>
+
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Note:</strong> Scraping may take several minutes depending on the number of cases.
+                    The page will redirect when complete.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Quick town selection
+    $('.town-btn').click(function() {
+        $('#town').val($(this).text());
+    });
+
+    // Show loading state on form submit
+    $('form').submit(function() {
+        $('#scrapeBtn').prop('disabled', true)
+            .html('<span class="spinner-border spinner-border-sm"></span> Scraping... Please wait...');
+    });
+});
+</script>
+{% endblock %}

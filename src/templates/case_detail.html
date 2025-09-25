@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}{{ case.case_name }} - Foreclosure Skip Trace{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1>Case Details</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('cases') }}">Cases</a></li>
+                <li class="breadcrumb-item active">{{ case.docket_number }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Case Information -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <i class="bi bi-info-circle"></i> Case Information
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Case Name:</strong> {{ case.case_name }}</p>
+                <p><strong>Docket Number:</strong> <code>{{ case.docket_number }}</code></p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Town:</strong> {{ case.town or 'N/A' }}</p>
+                <p><strong>Created:</strong> {{ case.created_at }}</p>
+            </div>
+        </div>
+        {% if case.docket_url %}
+        <div class="row">
+            <div class="col-12">
+                <p><strong>Docket URL:</strong>
+                    <a href="{{ case.docket_url }}" target="_blank">
+                        {{ case.docket_url }} <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Defendants -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <i class="bi bi-people"></i> Defendants ({{ case.defendants|length }})
+    </div>
+    <div class="card-body">
+        {% if case.defendants %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Address</th>
+                        <th>Town</th>
+                        <th>State</th>
+                        <th>ZIP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for defendant in case.defendants %}
+                    <tr>
+                        <td><strong>{{ defendant.name }}</strong></td>
+                        <td>{{ defendant.address or 'N/A' }}</td>
+                        <td>{{ defendant.town or 'N/A' }}</td>
+                        <td>{{ defendant.state or 'N/A' }}</td>
+                        <td>{{ defendant.zip or 'N/A' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted">No defendants found for this case.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Skip Trace Results -->
+<div class="row">
+    <!-- Production Skip Traces -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-telephone"></i> Production Skip Traces ({{ case.skiptraces|length }})
+            </div>
+            <div class="card-body">
+                {% if case.skiptraces %}
+                <ul class="list-group">
+                    {% for skiptrace in case.skiptraces %}
+                    <li class="list-group-item">
+                        <i class="bi bi-telephone-fill"></i>
+                        <strong>{{ skiptrace.phone_number }}</strong>
+                        <span class="badge bg-secondary float-end">{{ skiptrace.phone_type or 'unknown' }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No production skip trace results.</p>
+                <button class="btn btn-primary skip-trace-btn"
+                        data-docket="{{ case.docket_number }}"
+                        data-production="true">
+                    <i class="bi bi-telephone-plus"></i> Run Production Skip Trace
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sandbox Skip Traces -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-telephone"></i> Sandbox Skip Traces ({{ case.skiptraces_sandbox|length }})
+            </div>
+            <div class="card-body">
+                {% if case.skiptraces_sandbox %}
+                <ul class="list-group">
+                    {% for skiptrace in case.skiptraces_sandbox %}
+                    <li class="list-group-item">
+                        <i class="bi bi-telephone"></i>
+                        <strong>{{ skiptrace.phone_number }}</strong>
+                        <span class="badge bg-secondary float-end">{{ skiptrace.phone_type or 'unknown' }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">No sandbox skip trace results.</p>
+                <button class="btn btn-warning skip-trace-btn"
+                        data-docket="{{ case.docket_number }}"
+                        data-production="false">
+                    <i class="bi bi-telephone-plus"></i> Run Sandbox Skip Trace (Test)
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="card">
+    <div class="card-body">
+        <a href="{{ url_for('cases') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Cases
+        </a>
+        {% if not case.skiptraces %}
+        <button class="btn btn-success skip-trace-btn"
+                data-docket="{{ case.docket_number }}"
+                data-production="true">
+            <i class="bi bi-telephone-plus"></i> Run Skip Trace
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('.skip-trace-btn').click(function() {
+        const docket = $(this).data('docket');
+        const production = $(this).data('production') === true || $(this).data('production') === 'true';
+        const force = false;  // Can be made configurable
+
+        if (production && !confirm('This will use the production API and may incur charges. Continue?')) {
+            return;
+        }
+
+        const btn = $(this);
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Processing...');
+
+        $.post(`/skip-trace/${docket}`, {
+            production: production,
+            force: force
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert(`Success! Found ${response.stats.phone_numbers_found} phone numbers.`);
+                location.reload();
+            } else {
+                alert(`Error: ${response.message}`);
+                if (response.message.includes('already skip traced')) {
+                    if (confirm('Case already skip traced. Force re-process?')) {
+                        // Retry with force=true
+                        $.post(`/skip-trace/${docket}`, {
+                            production: production,
+                            force: true
+                        })
+                        .done(function(response2) {
+                            alert(`Found ${response2.stats.phone_numbers_found} phone numbers.`);
+                            location.reload();
+                        });
+                    }
+                }
+            }
+        })
+        .fail(function(xhr) {
+            alert('Error running skip trace: ' + xhr.responseText);
+        })
+        .always(function() {
+            btn.prop('disabled', false).html('<i class="bi bi-telephone-plus"></i> Run Skip Trace');
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{
+  "requests": [
+    {
+      "propertyAddress": {
+        "city": "Franklin Square",
+        "street": "1011 Rosegold St",
+        "state": "NY",
+        "zip": "11010-2507"
+      }
+    },
+    {
+      "propertyAddress": {
+        "street": "25866 W Globe Ave",
+        "city": "Buckeye",
+        "state": "AZ",
+        "zip": "85326"
+      }
+    }
+  ]
+}
